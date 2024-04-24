@@ -35,7 +35,11 @@ type TokenContainer struct {
 func extractToken(r *http.Request) (*oauth2.Token, error) {
 	hdr := r.Header.Get("Authorization")
 	if hdr == "" {
-		return nil, errors.New("No authorization header")
+		fromQury := r.URL.Query().Get("token")
+		if fromQury == "" {
+			return nil, errors.New("No authorization header")
+		}
+		hdr = "Bearer " + fromQury
 	}
 
 	th := strings.Split(hdr, " ")
