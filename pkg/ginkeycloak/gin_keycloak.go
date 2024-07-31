@@ -33,6 +33,7 @@ type TokenContainer struct {
 }
 
 func extractToken(r *http.Request) (*oauth2.Token, error) {
+
 	hdr := r.Header.Get("Authorization")
 	if hdr == "" {
 		fromQury := r.URL.Query().Get("token")
@@ -198,11 +199,22 @@ func getTokenContainer(ctx *gin.Context, config KeycloakConfig) (*TokenContainer
 	var oauthToken *oauth2.Token
 	var tc *TokenContainer
 	var err error
-
-	if oauthToken, err = extractToken(ctx.Request); err != nil {
-		glog.Errorf("[Gin-OAuth] Can not extract oauth2.Token, caused by: %s", err)
-		return nil, false
+	// check if ctx contains oath2
+	rawtoken, found := ctx.Get("oauth2")
+	if found {
+		tt, ok := rawtoken.(*oauth2.Token)
+		if ok {
+			glog.Info("get oauth2 token from context")
+			oauthToken = tt
+		}
 	}
+	if oauthToken == nil {
+		if oauthToken, err = extractToken(ctx.Request); err != nil {
+			glog.Errorf("[Gin-OAuth] Can not extract oauth2.Token, caused by: %s", err)
+			return nil, false
+		}
+	}
+
 	if !oauthToken.Valid() {
 		glog.Infof("[Gin-OAuth] Invalid Token - nil or expired")
 		return nil, false
