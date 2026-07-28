@@ -16,10 +16,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/golang/glog"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/oauth2"
-	"gopkg.in/go-jose/go-jose.v2/jwt"
 )
 
 // VarianceTimer controls the max runtime of Auth() and AuthChain() middleware
@@ -131,7 +132,11 @@ func getPublicKeyFromCacheOrBackend(keyId string, config KeycloakConfig) (KeyEnt
 		u.Path = path.Join(u.Path, "realms", config.Realm, "protocol/openid-connect/certs")
 	}
 
-	resp, err := http.Get(u.String())
+	httpClient := http.DefaultClient
+	if config.HTTPClient != nil {
+		httpClient = config.HTTPClient
+	}
+	resp, err := httpClient.Get(u.String())
 	if err != nil {
 		return KeyEntry{}, err
 	}
@@ -157,8 +162,10 @@ func getPublicKeyFromCacheOrBackend(keyId string, config KeycloakConfig) (KeyEnt
 func decodeToken(token *oauth2.Token, config KeycloakConfig) (*KeyCloakToken, error) {
 	keyCloakToken := KeyCloakToken{}
 
+	supportedSignatureAlgorithms := []jose.SignatureAlgorithm{jose.RS256, jose.ES256}
+
 	var err error
-	parsedJWT, err := jwt.ParseSigned(token.AccessToken)
+	parsedJWT, err := jwt.ParseSigned(token.AccessToken, supportedSignatureAlgorithms)
 	if err != nil {
 		glog.Errorf("[Gin-OAuth] jwt not decodable: %s", err)
 		return nil, err
@@ -247,6 +254,7 @@ type KeycloakConfig struct {
 	Realm              string
 	FullCertsPath      *string
 	CustomClaimsMapper ClaimMapperFunc
+	HTTPClient         *http.Client
 }
 
 func Auth(accessCheckFunction AccessCheckFunction, endpoints KeycloakConfig) gin.HandlerFunc {

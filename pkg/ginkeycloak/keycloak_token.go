@@ -25,6 +25,8 @@ type KeyCloakToken struct {
 	CustomClaims      interface{}            `json:"custom_claims,omitempty"`
 	Owner             string                 `json:"owner,omitempty"`
 	Groups            []string               `json:"groups,omitempty"`
+	Stores            []string               `json:"stores,omitempty"`
+	Tags              []string               `json:"tags,omitempty"`
 }
 
 type ServiceRole struct {

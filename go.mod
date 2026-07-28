@@ -2,11 +2,11 @@ module github.com/tbaehler/gin-keycloak
 
 require (
 	github.com/gin-gonic/gin v1.12.0
+	github.com/go-jose/go-jose/v4 v4.1.2
 	github.com/golang/glog v1.2.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/oauth2 v0.35.0
-	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
 require (

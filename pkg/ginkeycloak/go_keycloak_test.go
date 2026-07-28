@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/go-jose/go-jose.v2"
-	"gopkg.in/go-jose/go-jose.v2/jwt"
 )
 
 const dummyPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
@@ -122,12 +122,12 @@ func setupRSA(keyCloakToken KeyCloakToken) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	signedTokenRsa, err := jwt.Signed(sigRsa).Claims(&customToken).CompactSerialize()
+	signedTokenRsa, err := jwt.Signed(sigRsa).Claims(&customToken).Serialize()
 	if err != nil {
 		panic(err)
 	}
 
-	raw, _ := jwt.ParseSigned(signedTokenRsa)
+	parsedRsa, _ := jwt.ParseSigned(signedTokenRsa, []jose.SignatureAlgorithm{jose.RS256, jose.ES256})
 	publicKey := pubKey.(*rsa.PublicKey)
 	be := big.NewInt(int64(publicKey.E))
 	ke := KeyEntry{
@@ -138,7 +138,7 @@ func setupRSA(keyCloakToken KeyCloakToken) {
 		N:   base64.RawURLEncoding.EncodeToString(publicKey.N.Bytes()),
 		E:   base64.RawURLEncoding.EncodeToString(be.Bytes()),
 	}
-	_ = publicKeyCache.Add(raw.Headers[0].KeyID, ke, time.Minute)
+	_ = publicKeyCache.Add(parsedRsa.Headers[0].KeyID, ke, time.Minute)
 
 	tokens = append(tokens, signedTokenRsa)
 }
@@ -163,11 +163,11 @@ func SetupEC(keyCloakToken KeyCloakToken) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	signedTokenEc, err := jwt.Signed(sigEc).Claims(&customToken).CompactSerialize()
+	signedTokenEc, err := jwt.Signed(sigEc).Claims(&customToken).Serialize()
 	if err != nil {
 		panic(err)
 	}
-	raw, _ := jwt.ParseSigned(signedTokenEc)
+	parsedEc, _ := jwt.ParseSigned(signedTokenEc, []jose.SignatureAlgorithm{jose.RS256, jose.ES256})
 	ke := KeyEntry{
 		Kid: "2",
 		Kty: "EC",
@@ -177,7 +177,7 @@ func SetupEC(keyCloakToken KeyCloakToken) {
 		X:   base64.RawURLEncoding.EncodeToString(dummyECKey.X.Bytes()),
 		Y:   base64.RawURLEncoding.EncodeToString(dummyECKey.Y.Bytes()),
 	}
-	_ = publicKeyCache.Add(raw.Headers[0].KeyID, ke, time.Minute)
+	_ = publicKeyCache.Add(parsedEc.Headers[0].KeyID, ke, time.Minute)
 	tokens = append(tokens, signedTokenEc)
 }
 
