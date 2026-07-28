@@ -23,6 +23,8 @@ type KeyCloakToken struct {
 	Email             string                 `json:"email,omitempty"`
 	RealmAccess       ServiceRole            `json:"realm_access,omitempty"`
 	CustomClaims      interface{}            `json:"custom_claims,omitempty"`
+	Owner             string                 `json:"owner,omitempty"`
+	Groups            []string               `json:"groups,omitempty"`
 }
 
 type ServiceRole struct {
